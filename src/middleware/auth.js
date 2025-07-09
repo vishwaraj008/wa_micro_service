@@ -7,13 +7,9 @@ const authenticateService = async (req, res, next) => {
     const serviceSecret = req.body.service_secret || req.headers['x-service-secret'];
 
     if (!serviceIdentifier || !serviceSecret) {
-      return res.status(400).json({
+      return res.status(401).json({
         error: 'Authentication failed',
-        message: 'service_identifier and service_secret are required',
-        details: {
-          service_identifier: !serviceIdentifier ? 'Missing service_identifier in request body or x-service-identifier header' : null,
-          service_secret: !serviceSecret ? 'Missing service_secret in request body or x-service-secret header' : null
-        }
+        message: 'service_identifier and service_secret are required'
       });
     }
 
@@ -21,7 +17,6 @@ const authenticateService = async (req, res, next) => {
 
     req.authenticatedService = authenticatedService;
     
-
     next();
   } catch (error) {
     console.error('Authentication middleware error:', error);

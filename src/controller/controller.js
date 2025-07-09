@@ -1,9 +1,22 @@
 const { uploadMediaToWhatsApp } = require('../services/service');
+const { validationResult } = require('express-validator');
 const fs = require('fs');
 const path = require('path');
 
 const uploadMedia = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Request validation failed',
+        details: errors.array()
+      });
+    }
+
     if (!req.file) {
       return res.status(400).json({
         error: 'No file uploaded',
@@ -11,16 +24,7 @@ const uploadMedia = async (req, res) => {
       });
     }
 
-    const { whatsapp_access_token, whatsapp_business_account_id } = req.body;
-   
-    if (!whatsapp_access_token || !whatsapp_business_account_id) {
-      fs.unlinkSync(req.file.path);
-      return res.status(400).json({
-        error: 'Missing required fields',
-        message: 'whatsapp_access_token and whatsapp_business_account_id are required'
-      });
-    }
-
+    const { phone_number, whatsapp_access_token, whatsapp_business_account_id } = req.body;
     const authenticatedService = req.authenticatedService;
 
     const fileData = {
@@ -59,7 +63,13 @@ const uploadMedia = async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
-    if (error.response) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: error.message,
+        details: error.details || []
+      });
+    } else if (error.response) {
       return res.status(error.response.status || 500).json({
         error: 'WhatsApp API Error',
         message: error.response.data?.error?.message || 'Failed to upload media to WhatsApp',
