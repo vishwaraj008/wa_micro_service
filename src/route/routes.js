@@ -1,13 +1,13 @@
 const express = require('express');
 const { uploadMedia } = require('../controller/controller');
 const { upload, handleMulterError } = require('../middleware/multer');
+const rateLimiter = require('../middleware/rateLimiter');
+const { authenticateService } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Routes
-router.post('/whatsapp/media', upload.single('media'), uploadMedia);
+router.post('/whatsapp/media', rateLimiter, authenticateService, upload.single('media'), uploadMedia);
 
-// Error handling for multer
 router.use(handleMulterError);
 
 module.exports = router;
